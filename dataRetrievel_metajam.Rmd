@@ -1,0 +1,81 @@
+---
+title: "API Practice - dataRetrievel and metajam"
+output: html_document
+date: "2022-08-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dataRetrieval)
+library(tidyverse)
+library(metajam)
+
+```
+
+# Exercise 1
+
+#### Ventura River from 2019-10-01 to 2020-10-05
+
+```{r}
+siteNumber <- "11118500"
+parameterCd <- "00060"  # Discharge
+startDate <- "2019-10-01"  
+endDate <- "2020-10-05" 
+
+discharge <- readNWISdv(siteNumber, 
+                    parameterCd, startDate, endDate)
+```
+
+#### Plot the discharge time-series for the Ventura River from 2019-10-01 to 2020-10-05
+
+```{r}
+ggplot(data = discharge, aes(y = X_00060_00003, x = Date)) +
+  geom_line()
+```
+
+# Exercise 2
+
+```{r}
+# store url of dataset and store pathway where you want to download the data
+
+data_obj <- "https://knb.ecoinformatics.org/knb/d1/mn/v2/object/urn%3Auuid%3A7fc6f6db-c5ea-426a-a743-1f2edafb43b8"
+path <- "/Users/acreed/github/api-practice"
+
+#download the data
+download_d1_data(data_obj, path)
+
+# read in the data
+my_data <- read_d1_files("/Users/acreed/github/api-practice/doi_10.5063_F1CJ8BPH__household_language__csv")
+
+# extract the dataframe 
+dataframe <- my_data$data
+```
+
+```{r}
+only_english <- dataframe |>
+  filter(Year >= 2009, 
+         Year <= 2015) |>
+  mutate(percent_english = ((speak_only_english/total) * 100)) |>
+  select(Year, percent_english) |>
+  group_by(Year) |>
+  summarize(mean_percent = mean(percent_english, na.rm = TRUE))
+
+ggplot(data = only_english, aes(x = Year, y = mean_percent)) +
+  geom_line()
+```
+
+Write a piece of code that will compute the percentage of Alaskan household speaking only English for the year 2009 to 2015
+
+```{r}
+only_english2 <- dataframe |>
+  filter(Year >= 2009, 
+         Year <= 2015) |>
+  group_by(Year) |>
+  summarize (city, speak_only_english) |>
+  mutate(percent_english = ((speak_only_english/total) * 100)) |>
+  select(Year, percent_english) 
+
+ggplot(aes(y = percent_english)) +
+  geom_histogram()
+```
+
